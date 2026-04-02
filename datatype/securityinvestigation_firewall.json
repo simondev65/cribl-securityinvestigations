@@ -1,0 +1,42 @@
+{
+  "id": "securityinvestigation_firewall",
+  "description": "",
+  "tags": "",
+  "minRawLength": 256,
+  "rules": [
+    {
+      "condition": "/^{\"?_raw\"?:\"?\\w+\\s\\d+\\s\\d+:\\d+:\\d+\\s\\d+.\\d+.\\d+.\\d+\\sdate=\\d+-\\d+-\\d+\\stime=/.test(_raw)",
+      "type": "json",
+      "timestampAnchorRegex": "/date=/",
+      "timestamp": {
+        "type": "format",
+        "length": 150,
+        "format": "%Y-%m-%d time=%H:%M:%S"
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1773407702s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": true,
+      "parser": {
+        "mode": "extract",
+        "type": "kvp",
+        "srcField": "_raw",
+        "cleanFields": false,
+        "allowedKeyChars": [],
+        "allowedValueChars": []
+      },
+      "eventBreakerRegex": "/[\\n\\r]+(?!\\s)/",
+      "name": "fortinet",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'securityinvestigation_fortinet'"
+        }
+      ]
+    }
+  ],
+  "searchVersion": "v1"
+}

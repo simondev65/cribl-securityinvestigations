@@ -1,0 +1,292 @@
+{
+  "id": "securityinvestigation_other",
+  "minRawLength": 256,
+  "rules": [
+    {
+      "condition": "dataSource=='aws:elb:accesslogs'",
+      "type": "json",
+      "timestampAnchorRegex": "/http/",
+      "timestamp": {
+        "type": "auto",
+        "length": 150
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1773771136s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": true,
+      "parser": {
+        "mode": "extract",
+        "type": "elff",
+        "srcField": "_raw",
+        "fields": [
+          "timestamp",
+          "elb",
+          "client_port",
+          "backend_port",
+          "request_processing_time",
+          "backend_processing_time",
+          "response_processing_time",
+          "elb_status_code",
+          "backend_status_code",
+          "received_bytes",
+          "sent_bytes",
+          "request",
+          "user_agent",
+          "ssl_cipher",
+          "ssl_protocol"
+        ]
+      },
+      "eventBreakerRegex": "/[\\n\\r]+(?!\\s)/",
+      "name": "aws:elb:accesslog",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'securityinvestigation_other_aws:elb:accesslog'"
+        }
+      ]
+    },
+    {
+      "condition": "dataSource=='aws:rds:audit'",
+      "type": "json",
+      "timestampAnchorRegex": "/{\"_raw\":\"/",
+      "timestamp": {
+        "type": "auto",
+        "length": 150
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1773769964s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": true,
+      "parser": {
+        "mode": "extract",
+        "type": "delim",
+        "delimChar": ",",
+        "quoteChar": "'",
+        "escapeChar": "\\",
+        "nullValue": "-",
+        "srcField": "_raw",
+        "fields": [
+          "time",
+          "serverhost",
+          "username",
+          "host",
+          "connectionid",
+          "queryid",
+          "operation",
+          "database",
+          "object",
+          "retcode"
+        ]
+      },
+      "eventBreakerRegex": "/[\\n\\r]+(?!\\s)/",
+      "name": "aws:rds:audit",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'securityinvestigation_other_aws:rds:audit'"
+        }
+      ]
+    },
+    {
+      "condition": "dataSource=='aws:cloudwatchlogs'",
+      "type": "json",
+      "timestampAnchorRegex": "/^/",
+      "timestamp": {
+        "type": "auto",
+        "length": 150
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1773771136s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": true,
+      "parser": {
+        "mode": "extract",
+        "type": "delim",
+        "delimChar": " ",
+        "quoteChar": "'",
+        "escapeChar": "\"",
+        "nullValue": "-",
+        "srcField": "_raw",
+        "fields": [
+          "format_version",
+          "time",
+          "hosted_zone_id",
+          "query_name",
+          "query_type",
+          "response_code",
+          "layer_4_protocol",
+          "route53_edge_location",
+          "resolver_ip_address",
+          "edns_client_subnet"
+        ]
+      },
+      "eventBreakerRegex": "/[\\n\\r]+(?!\\s)/",
+      "name": "route53",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'securityinvestigation_other_route53'"
+        }
+      ]
+    },
+    {
+      "condition": "dataSource=='aws:s3:accesslogs'",
+      "type": "json",
+      "timestampAnchorRegex": "/\\[/",
+      "timestamp": {
+        "type": "format",
+        "length": 150,
+        "format": "%d/%b/%Y:%H:%M:%S"
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1773762686s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": true,
+      "parser": {
+        "mode": "extract",
+        "type": "clf",
+        "srcField": "_raw",
+        "iterations": 100,
+        "overwrite": false,
+        "regex": "/^(?<bucket_owner>\\S+)\\s+(?<bucket>\\S+)\\s+\\[(?<time>[^\\]]+)\\]\\s+(?<remote_ip>\\S+)\\s+(?<requester>\\S+)\\s+(?<request_id>\\S+)\\s+(?<operation>\\S+)\\s+(?<key>\\S+)\\s+(?<request>\"[^\"]*\")\\s+(?<status>\\d{3}|-)\\s+(?<error>\\S+)\\s+(?<bytes_sent>\\S+)\\s+(?<object_size>\\S+)\\s+(?<total_time>\\S+)\\s+(?<turn_around_time>\\S+)\\s+(?<referrer>\"[^\"]*\"|-)\\s+(?<user_agent>\"[^\"]*\"|-)\\s+(?<version_id>\\S+)$/",
+        "fields": [
+          "bucket_owner",
+          "bucket",
+          "time",
+          "remote_ip",
+          "requester",
+          "request_id",
+          "operation",
+          "key",
+          "request",
+          "http_status",
+          "error_code",
+          "bytes_sent",
+          "object_size",
+          "total_time",
+          "turn_around_time",
+          "referrer",
+          "user_agent",
+          "version_id"
+        ]
+      },
+      "eventBreakerRegex": "/[\\n\\r]+(?!\\s)/",
+      "name": "aws:s3:access",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'securityinvestigation_other_aws:s3:access'"
+        }
+      ]
+    },
+    {
+      "condition": "/flow_id/.test(_raw)",
+      "type": "json",
+      "timestampAnchorRegex": "/^/",
+      "timestamp": {
+        "type": "auto",
+        "length": 150
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1773412202s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": true,
+      "parser": {
+        "mode": "extract",
+        "type": "json",
+        "srcField": "_raw"
+      },
+      "eventBreakerRegex": "/[\\n\\r]+(?!\\s)/",
+      "name": "suricata",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'securityinvestigation_other_suricata'"
+        }
+      ]
+    },
+    {
+      "condition": "/^{\"?_raw\"?:\\s?:?(\\\\S+\\\\s){3}\\\\[[^\\\\]]+\\\\]\\\\s\\\"[^\\\"]+\\\"(\\\\s+\\\\S+){2}$/.test(_raw)",
+      "type": "regex",
+      "timestampAnchorRegex": "/^/",
+      "timestamp": {
+        "type": "auto",
+        "length": 150
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1773760951s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": true,
+      "parserEnabled": true,
+      "shouldUseDataRaw": true,
+      "eventBreakerRegex": "/[\\n\\r]+(?!\\s)/",
+      "parser": {
+        "mode": "extract",
+        "type": "clf",
+        "srcField": "_raw",
+        "fields": [
+          "clientip",
+          "ident",
+          "user",
+          "timestamp",
+          "request",
+          "status",
+          "bytes"
+        ]
+      },
+      "name": "apache_access",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'securityinvestigation_other_apache_access'"
+        }
+      ]
+    },
+    {
+      "condition": "/^{\\\"/.test(_raw)",
+      "type": "json",
+      "timestampAnchorRegex": "/^/",
+      "timestamp": {
+        "type": "auto",
+        "length": 150
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1773412202s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": true,
+      "parser": {
+        "mode": "extract",
+        "type": "json",
+        "srcField": "_raw"
+      },
+      "eventBreakerRegex": "/[\\n\\r]+(?!\\s)/",
+      "name": "json",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'securityinvestigation_other_json'"
+        }
+      ]
+    }
+  ],
+  "searchVersion": "v1"
+}

@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars (gitignored) and fill in real values.
+# Never commit terraform.tfvars if it contains secrets.
+
+assume_role_arn           = "arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME"
+assume_role_external_id   = "use-a-long-random-string-not-this-example"
+s3_investigation_bucket   = "your-investigation-bucket-name"
+
+# Optional override:
+# aws_region = "eu-central-1"

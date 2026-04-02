@@ -1,0 +1,391 @@
+{
+  "id": "securityinvestigation_windows",
+  "description": "Datatype rules for MS Windows formats",
+  "tags": "windows,eventlogclassic,eventlogxml",
+  "minRawLength": 256,
+  "rules": [
+    {
+      "condition": "/Provider Name='Microsoft-Windows-Sysmon/.test(_raw)",
+      "type": "regex",
+      "timestampAnchorRegex": "/UtcTime/",
+      "timestamp": {
+        "type": "auto",
+        "length": 150
+      },
+      "timestampTimezone": "UTC",
+      "timestampEarliest": "-1772813310s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": false,
+      "eventBreakerRegex": "/[\\n\\r]+(?!\\s)/",
+      "parser": {
+        "mode": "extract",
+        "type": "regex",
+        "srcField": "_raw",
+        "iterations": 100,
+        "overwrite": false,
+        "regex": "/<(?<_KEY_0>[\\w]+)(\\s[\\w='\"]+)?>(?<_VALUE_0>[^<]*)<\\/\\1>/",
+        "regexList": [
+          {
+            "regex": "/<Data Name=[\\\"|\\'](?<_NAME_1>\\w+)[\\\"|\\']>(?<_VALUE_1>[^<]+)/"
+          }
+        ]
+      },
+      "name": "sysmon",
+      "fields": []
+    },
+    {
+      "condition": "/^{\"?_raw\"?:\\s?\"?\\d+\\/\\d+\\/\\d+\\s\\d+:\\d+:\\d+\\s\\w+[\\r\\n\\s]+LogName=/.test(_raw)",
+      "type": "json",
+      "timestampAnchorRegex": "/^/",
+      "timestamp": {
+        "type": "format",
+        "length": 150,
+        "format": "%m/%d/%Y %H:%M:%S %p"
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1750408390s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 1024000,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": true,
+      "parser": {
+        "mode": "extract",
+        "type": "regex",
+        "srcField": "_raw",
+        "iterations": 100,
+        "overwrite": false,
+        "cleanFields": false,
+        "allowedKeyChars": [],
+        "allowedValueChars": [],
+        "delimChar": ",",
+        "quoteChar": "\"",
+        "escapeChar": "\\",
+        "nullValue": "-",
+        "regex": "/LogName=(?<LogName>[^=]+)(?=\\s\\w+=)/",
+        "regexList": [
+          {
+            "regex": "/EventCode=(?<EventID>[^=]+)(?=\\s\\w+=)/"
+          },
+          {
+            "regex": "/EventType=(?<EventType>[^=]+)(?=\\s\\w+=)/"
+          },
+          {
+            "regex": "/ComputerName=(?<ComputerName>[^=]+)(?=\\s\\w+=)/"
+          },
+          {
+            "regex": "/SourceName=(?<SourceName>[^=]+)(?=\\s\\w+=)/"
+          },
+          {
+            "regex": "/Type=(?<Type>[^=]+)(?=\\s\\w+=)/"
+          },
+          {
+            "regex": "/RecordNumber=(?<RecordNumber>[^=]+)(?=\\s\\w+=)/"
+          },
+          {
+            "regex": "/Keywords=(?<Keywords>[^=]+)(?=\\s\\w+=)/"
+          },
+          {
+            "regex": "/TaskCategory=(?<TaskCategory>[^=]+)(?=\\s\\w+=)/"
+          },
+          {
+            "regex": "/OpCode=(?<OpCode>[^=]+)(?=\\s\\w+=)/"
+          },
+          {
+            "regex": "/Message=(?<Message>[^=\"]+)(?=\\s\\w+=||\",)/"
+          },
+          {
+            "regex": "/EventCode=4625.*?Message=.*?\\n.*?Subject\\s*:.*?Account Name:\\s*(?<dst_user>.*?)\\n.*?Account Domain:\\s*(?<dst_nt_domain>.*?)\\n.*?Logon ID:\\s*(?<session_id>.*?)\\n.*?\\nLogon Type:.*?\\n.*?Account For Which Logon Failed.*?\\n.*?Security ID:(?<user_sid>.*?)\\n.*?Account Name:(?<user>.*?)\\n.*?Account Domain:(?<src_nt_domain>.*?)\\n/ms"
+          },
+          {
+            "regex": "/EventCode=4624\\n.*?Source Network Address:\\s+?(?<src_ip>[^\\n]+)/ms"
+          },
+          {
+            "regex": "/New Logon:\\n*?.*?Security ID:\\s*?(?<dest_nt_domain>[^\\\\]+)\\\\(?<src_host>.*?)\\n.*?Account Name:(?<user>.*?)\\s*\\n.*?Account Domain:\\s+(?<dst_nt_domain>[^\\n]+).*?Logon ID:\\s+(?<session_id>[^\\n]+)/ms"
+          },
+          {
+            "regex": "/EventCode=(4727|4730|4731|4734|4735|4737|4744|4745|4748|4749|4750|4753|4754|4755|4758|4759|4760|4763|4764).*Message=A (?<MSADGroupClass>.*)\\-(?<MSADGroupClassID>(enabled|disabled))\\s(?<MSADGroupType>.*)\\sgroup\\swas\\s(?<msad_action>[^\\.]+).*Subject:.*Security ID:\\s*(?<src_nt_domain>.*)\\\\(?<src_user>.*)\\s*\\n.*Account Name:.*Group:.*Security ID:\\s*(?<member_id>.*)\\s*\\n.*Group Name:.*Group Domain:(?<dest_nt_domain>[^(\\r|\\n)]+).*Attributes:/ms"
+          },
+          {
+            "regex": "/EventCode=(4764)(\\n|\\r).*Message\\=A group’s type was (?<msad_action>[^\\.]+)/ms"
+          },
+          {
+            "regex": "/EventCode=(4728|4729|4732|4733|4746|4747|4751|4752|4756|4757|4761|4762).*Message=A member was (?<msad_action>.*) (to|from) a (?<MSADGroupClass>.*)\\-(?<MSADGroupClassID>(enabled|disabled)) (?<MSADGroupType>.*) group.*Subject:.*Security ID:\\s*(?<src_nt_domain>.*)\\\\(?<src_user>.*)\\n.*Account Name:.*Account Domain:.*Member:.*Security ID:\\s*.*\\\\(?<member>.*)\\n.*Account Name:.*Group:.*/ms"
+          },
+          {
+            "regex": "/EventCode=4756.*(?:Account Domain.*Account Domain|Account Domain(?!(Account Domain)))\\:\\s+(?<dest_nt_domain>[a-zA-Z0-9._[\\S\\-\\S]+)$/mis"
+          },
+          {
+            "regex": "/EventCode\\=4756\\s*\\n.*Member\\:.*CN\\=(?<member_id>[^\\,]+),CN.*Group\\:.*Account\\sName\\:\\s+(?<user_group>[^(\\n|\\r|\\s)]+).*Account\\sDomain\\:\\s+(?<member_nt_domain>[^(\\n|\\r|\\s)]+).*/ms"
+          },
+          {
+            "regex": "/EventCode=(4756)(\\n|\\r).*Group:(\\n|\\r).*Security ID:(?<Group_Domain>.*)\\\\(?<Group_Name>[^(\\n|\\r)]+)(\\r|\\n).*Account Name:/ms"
+          },
+          {
+            "regex": "/EventCode=4662\\s*\\n.*Message=.*?\\n.*?Subject\\s*:.*?Account Name:\\s*(?<src_user>.*?)\\s*\\n.*?Account Domain:\\s*(?<src_nt_domain>.*?)\\s*\\n.*?Logon ID:\\s*(?<session_id>.*?)\\s*\\n/ms"
+          },
+          {
+            "regex": "/EventCode=4662\\s*\\n.*Message=.*?Object\\s*:.*?Object\\sName:\\s*(CN=|%)*{*(?<Object_Name_Guid>[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12})}*.*/ms"
+          },
+          {
+            "regex": "/Message\\=A\\suser\\saccount\\swas\\s(?<msad_action>[^\\.]+)\\.(\\s+|\\n+|\\r+).*Subject\\:(\\s+|\\n+|\\r+).*Account\\sName\\:\\s+(?<src_user>[^(\\s+|\\n+|\\r+)]+)(\\s+|\\n+|\\r+).*Logon\\sID\\:\\s+(?<session_id>[^(\\s+|\\n+|\\r+)]+)(\\s+|\\n+|\\r+).*Target\\sAccount\\:(\\s+|\\n+|\\r+).*?Account Name\\:\\s+(?<user>[^(\\s+|\\n+|\\r+)]+)/mis"
+          },
+          {
+            "regex": "/Message\\=A\\suser\\saccount\\swas\\s(?<msad_action>[^(\\.|\\s)]+)(\\.|\\s+|\\n+|\\r+).*Subject\\:(\\s+|\\n+|\\r+).*Account\\sName\\:\\s+(?<src_user>[^(\\s+|\\n+|\\r+)]+)(\\s+|\\n+|\\r+).*Logon\\sID\\:\\s+(?<session_id>[^(\\s+|\\n+|\\r+)]+)(\\s+|\\n+|\\r+).*(Account\\sThat\\sWas\\sLocked\\sOut|Target\\sAccount)\\:(\\s+|\\n+|\\r+).*?Account Name\\:\\s+(?<user>[^(\\s+|\\n+|\\r+)]+) /mis"
+          },
+          {
+            "regex": "/Account Name\\:\\s+(?<src_user>[^\\n\\r\\s]+)[\\r\\n\\s].*Account\\sDomain\\:\\s+(?<src_nt_domain>[^\\n\\r\\s]+)[\\r\\n\\s].*Logon\\sID\\:\\s+(?<session_id>[^\\n\\r\\s]+)(\\r|\\n|\\s).*Group\\:/ms"
+          },
+          {
+            "regex": "/Process Name:.*Microsoft\\.Exchange\\.(?<ProtocolServiceName>[^\\.]+)\\.exe/"
+          }
+        ]
+      },
+      "eventBreakerRegex": "/(?=\\d{2}\\/\\d{2}\\/\\d{4}\\s\\d{2}:\\d{2}:\\d{2}\\s[AM|PM])/",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'securityinvestigation_classicwindows_1_line'"
+        },
+        {
+          "name": "Channel",
+          "value": "LogName"
+        }
+      ],
+      "name": "classicwindows_1_line"
+    },
+    {
+      "condition": "/^\\d+\\/\\d+\\/\\d+\\s\\d+:\\d+:\\d+\\s\\w+[\\r\\n]+LogName=(?:Security|Application|System|Setup)/.test(_raw)",
+      "type": "regex",
+      "timestampAnchorRegex": "/^/",
+      "timestamp": {
+        "type": "auto",
+        "length": 150
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1750408390s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": false,
+      "eventBreakerRegex": "/(?=\\d{2}\\/\\d{2}\\/\\d{4}\\s\\d{2}:\\d{2}:\\d{2}\\s[AM|PM])/",
+      "parser": {
+        "mode": "extract",
+        "type": "regex",
+        "srcField": "_raw",
+        "iterations": 100,
+        "overwrite": false,
+        "cleanFields": false,
+        "allowedKeyChars": [],
+        "allowedValueChars": [],
+        "delimChar": ",",
+        "quoteChar": "\"",
+        "escapeChar": "\\",
+        "nullValue": "-",
+        "regex": "/LogName=(?<LogName>.+)[\\r\\n]+/",
+        "regexList": [
+          {
+            "regex": "/EventCode=(?<EventID>.+)[\\r\\n]+/"
+          },
+          {
+            "regex": "/EventType=(?<EventType>.+)[\\r\\n]+/"
+          },
+          {
+            "regex": "/ComputerName=(?<ComputerName>.+)[\\r\\n]+/"
+          },
+          {
+            "regex": "/SourceName=(?<SourceName>.+)[\\r\\n]+/"
+          },
+          {
+            "regex": "/Type=(?<Type>.+)[\\r\\n]+/"
+          },
+          {
+            "regex": "/RecordNumber=(?<RecordNumber>.+)[\\r\\n]+/"
+          },
+          {
+            "regex": "/Keywords=(?<Keywords>.+)[\\r\\n]+/"
+          },
+          {
+            "regex": "/TaskCategory=(?<TaskCategory>.+)[\\r\\n]+/"
+          },
+          {
+            "regex": "/OpCode=(?<OpCode>.+)[\\r\\n]+/"
+          },
+          {
+            "regex": "/Message=(?<Message>[\\S\\s\\r\\n]+)/"
+          },
+          {
+            "regex": "/EventCode=4625.*?Message=.*?\\n.*?Subject\\s*:.*?Account Name:\\s*(?<dst_user>.*?)\\n.*?Account Domain:\\s*(?<dst_nt_domain>.*?)\\n.*?Logon ID:\\s*(?<session_id>.*?)\\n.*?\\nLogon Type:.*?\\n.*?Account For Which Logon Failed.*?\\n.*?Security ID:(?<user_sid>.*?)\\n.*?Account Name:(?<user>.*?)\\n.*?Account Domain:(?<src_nt_domain>.*?)\\n/ms"
+          },
+          {
+            "regex": "/EventCode=4624\\n.*?Source Network Address:\\s+?(?<src_ip>[^\\n]+)/ms"
+          },
+          {
+            "regex": "/New Logon:\\n*?.*?Security ID:\\s*?(?<dest_nt_domain>[^\\\\]+)\\\\(?<src_host>.*?)\\n.*?Account Name:(?<user>.*?)\\s*\\n.*?Account Domain:\\s+(?<dst_nt_domain>[^\\n]+).*?Logon ID:\\s+(?<session_id>[^\\n]+)/ms"
+          },
+          {
+            "regex": "/EventCode=(4727|4730|4731|4734|4735|4737|4744|4745|4748|4749|4750|4753|4754|4755|4758|4759|4760|4763|4764).*Message=A (?<MSADGroupClass>.*)\\-(?<MSADGroupClassID>(enabled|disabled))\\s(?<MSADGroupType>.*)\\sgroup\\swas\\s(?<msad_action>[^\\.]+).*Subject:.*Security ID:\\s*(?<src_nt_domain>.*)\\\\(?<src_user>.*)\\s*\\n.*Account Name:.*Group:.*Security ID:\\s*(?<member_id>.*)\\s*\\n.*Group Name:.*Group Domain:(?<dest_nt_domain>[^(\\r|\\n)]+).*Attributes:/ms"
+          },
+          {
+            "regex": "/EventCode=(4764)(\\n|\\r).*Message\\=A group’s type was (?<msad_action>[^\\.]+)/ms"
+          },
+          {
+            "regex": "/EventCode=(4728|4729|4732|4733|4746|4747|4751|4752|4756|4757|4761|4762).*Message=A member was (?<msad_action>.*) (to|from) a (?<MSADGroupClass>.*)\\-(?<MSADGroupClassID>(enabled|disabled)) (?<MSADGroupType>.*) group.*Subject:.*Security ID:\\s*(?<src_nt_domain>.*)\\\\(?<src_user>.*)\\n.*Account Name:.*Account Domain:.*Member:.*Security ID:\\s*.*\\\\(?<member>.*)\\n.*Account Name:.*Group:.*/ms"
+          },
+          {
+            "regex": "/EventCode=4756.*(?:Account Domain.*Account Domain|Account Domain(?!(Account Domain)))\\:\\s+(?<dest_nt_domain>[a-zA-Z0-9._[\\S\\-\\S]+)$/mis"
+          },
+          {
+            "regex": "/EventCode\\=4756\\s*\\n.*Member\\:.*CN\\=(?<member_id>[^\\,]+),CN.*Group\\:.*Account\\sName\\:\\s+(?<user_group>[^(\\n|\\r|\\s)]+).*Account\\sDomain\\:\\s+(?<member_nt_domain>[^(\\n|\\r|\\s)]+).*/ms"
+          },
+          {
+            "regex": "/EventCode=(4756)(\\n|\\r).*Group:(\\n|\\r).*Security ID:(?<Group_Domain>.*)\\\\(?<Group_Name>[^(\\n|\\r)]+)(\\r|\\n).*Account Name:/ms"
+          },
+          {
+            "regex": "/EventCode=4662\\s*\\n.*Message=.*?\\n.*?Subject\\s*:.*?Account Name:\\s*(?<src_user>.*?)\\s*\\n.*?Account Domain:\\s*(?<src_nt_domain>.*?)\\s*\\n.*?Logon ID:\\s*(?<session_id>.*?)\\s*\\n/ms"
+          },
+          {
+            "regex": "/EventCode=4662\\s*\\n.*Message=.*?Object\\s*:.*?Object\\sName:\\s*(CN=|%)*{*(?<Object_Name_Guid>[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12})}*.*/ms"
+          },
+          {
+            "regex": "/Message\\=A\\suser\\saccount\\swas\\s(?<msad_action>[^\\.]+)\\.(\\s+|\\n+|\\r+).*Subject\\:(\\s+|\\n+|\\r+).*Account\\sName\\:\\s+(?<src_user>[^(\\s+|\\n+|\\r+)]+)(\\s+|\\n+|\\r+).*Logon\\sID\\:\\s+(?<session_id>[^(\\s+|\\n+|\\r+)]+)(\\s+|\\n+|\\r+).*Target\\sAccount\\:(\\s+|\\n+|\\r+).*?Account Name\\:\\s+(?<user>[^(\\s+|\\n+|\\r+)]+)/mis"
+          },
+          {
+            "regex": "/Message\\=A\\suser\\saccount\\swas\\s(?<msad_action>[^(\\.|\\s)]+)(\\.|\\s+|\\n+|\\r+).*Subject\\:(\\s+|\\n+|\\r+).*Account\\sName\\:\\s+(?<src_user>[^(\\s+|\\n+|\\r+)]+)(\\s+|\\n+|\\r+).*Logon\\sID\\:\\s+(?<session_id>[^(\\s+|\\n+|\\r+)]+)(\\s+|\\n+|\\r+).*(Account\\sThat\\sWas\\sLocked\\sOut|Target\\sAccount)\\:(\\s+|\\n+|\\r+).*?Account Name\\:\\s+(?<user>[^(\\s+|\\n+|\\r+)]+) /mis"
+          },
+          {
+            "regex": "/Account Name\\:\\s+(?<src_user>[^\\n\\r\\s]+)[\\r\\n\\s].*Account\\sDomain\\:\\s+(?<src_nt_domain>[^\\n\\r\\s]+)[\\r\\n\\s].*Logon\\sID\\:\\s+(?<session_id>[^\\n\\r\\s]+)(\\r|\\n|\\s).*Group\\:/ms"
+          },
+          {
+            "regex": "/Process Name:.*Microsoft\\.Exchange\\.(?<ProtocolServiceName>[^\\.]+)\\.exe/"
+          }
+        ]
+      },
+      "name": "Windows Event Log Classic",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'windows_event_classic'"
+        },
+        {
+          "name": "Channel",
+          "value": "LogName"
+        }
+      ]
+    },
+    {
+      "condition": "/<Event xmlns=/.test(_raw)",
+      "type": "regex",
+      "timestampAnchorRegex": "/^/",
+      "timestamp": {
+        "type": "auto",
+        "length": 150
+      },
+      "timestampTimezone": "local",
+      "timestampEarliest": "-1750408390s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": true,
+      "eventBreakerRegex": "/[\\n\\r]+(?!\\s)/",
+      "parser": {
+        "mode": "extract",
+        "type": "regex",
+        "srcField": "_raw",
+        "iterations": 200,
+        "overwrite": false,
+        "cleanFields": false,
+        "allowedKeyChars": [],
+        "allowedValueChars": [],
+        "delimChar": ",",
+        "quoteChar": "\"",
+        "escapeChar": "\\",
+        "nullValue": "-",
+        "regex": "/<(?<_KEY_0>[\\w]+)(\\s[\\w='\"]+)?>(?<_VALUE_0>[^<]*)<\\/\\1>/",
+        "regexList": [
+          {
+            "regex": "/<Data Name=[\\\"|\\'](?<_NAME_1>\\w+)[\\\"|\\']>(?<_VALUE_1>[^<]+)/"
+          }
+        ],
+        "fields": []
+      },
+      "name": "Windows XML Events",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'windows_xml'"
+        },
+        {
+          "name": "host",
+          "value": "WinEventLogForwardHost?WinEventLogForwardHost:Computer"
+        },
+        {
+          "name": "Channel",
+          "value": "Array.isArray(Channel)?Channel[0]:Channel"
+        },
+        {
+          "name": "Level",
+          "value": "Array.isArray(Level)?Level[0]:Level"
+        },
+        {
+          "name": "Opcode",
+          "value": "Array.isArray(Opcode)?Opcode[0]:Opcode"
+        },
+        {
+          "name": "Task",
+          "value": "Array.isArray(Task)?Task[0]:Task"
+        },
+        {
+          "name": "Type",
+          "value": "Level?(Level==2?\"Error\":(Level==3?\"Warning\":(Level==1?\"Critical\":null))):null"
+        }
+      ]
+    },
+    {
+      "condition": "/[\\d\\/\\w]+[\\r\\n]+LogName=Microsoft-Windows-PowerShell/.test(_raw)",
+      "type": "regex",
+      "timestampAnchorRegex": "/UtcTime/",
+      "timestamp": {
+        "type": "auto",
+        "length": 150
+      },
+      "timestampTimezone": "UTC",
+      "timestampEarliest": "-1772813310s",
+      "timestampLatest": "+10years",
+      "maxEventBytes": 51200,
+      "disabled": false,
+      "parserEnabled": true,
+      "shouldUseDataRaw": false,
+      "eventBreakerRegex": "/[\\n\\r]+(?=\\d{2}\\/\\d{2}\\/\\d{4}\\s\\d+\\:\\d+\\:\\d+\\s+\\w{2}[\\r\\n]+LogName=Microsoft-Windows-PowerShell)/",
+      "parser": {
+        "mode": "extract",
+        "type": "kvp",
+        "srcField": "_raw",
+        "cleanFields": false,
+        "allowedKeyChars": [],
+        "allowedValueChars": [],
+        "iterations": 100,
+        "overwrite": false,
+        "regex": "/<(?<_KEY_0>[\\w]+)(\\s[\\w='\"]+)?>(?<_VALUE_0>[^<]*)<\\/\\1>/",
+        "regexList": [
+          {
+            "regex": "/<Data Name=[\\\"|\\'](?<_NAME_1>\\w+)[\\\"|\\']>(?<_VALUE_1>[^<]+)/"
+          }
+        ]
+      },
+      "name": "powershell",
+      "fields": [
+        {
+          "name": "datatype",
+          "value": "'powershell_powershell'"
+        }
+      ]
+    }
+  ],
+  "searchVersion": "v1"
+}
