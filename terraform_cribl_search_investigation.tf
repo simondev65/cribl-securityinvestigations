@@ -1,12 +1,3 @@
-#resource "criblio_pack" "search_pack" {
-#    id              = "securityinvestigation"
- #   group_id        = "default_search"
-#  display_name    = "cribl security investigation search pack"
-#    filename        = "cribl_search_securityinvestigation_0.0.1.crbl"
-#    version         = "0.0.1"
-#    description     = "Cribl Search pack for security investigation"
-# depends_on = [criblio_search_dataset_provider.securityinvestigation_provider]
-#}
 
 # Create the search dataset provider
 resource "criblio_search_dataset_provider" "securityinvestigation_provider" {
